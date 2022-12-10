@@ -15,7 +15,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+load("@vaticle_bazel_distribution//maven:rules.bzl", "assemble_maven", "deploy_maven")
+load("@vaticle_dependencies//distribution/maven:version.bzl", "version")
+load("@vaticle_dependencies//library/maven:artifacts.bzl", "artifacts")
 load("@vaticle_dependencies//tool/checkstyle:rules.bzl", "checkstyle_test")
+load("@vaticle_dependencies//distribution:deployment.bzl", "deployment")
 
 java_library(
     name = "typedb-runner",
@@ -29,12 +33,34 @@ java_library(
         "@maven//:org_slf4j_slf4j_api"
     ],
     visibility = ["//visibility:public"],
+    tags = [
+        "maven_coordinates=com.vaticle.typedb:typedb-runner:{pom_version}",
+    ],
 )
 
 filegroup(
     name = "logback",
     srcs = ["logback.xml"],
     visibility = ["//visibility:public"],
+)
+
+assemble_maven(
+    name = "assemble-maven",
+    target = ":typedb-runner",
+    workspace_refs = "@vaticle_typedb_common_workspace_refs//:refs.json",
+    version_file = "//:VERSION",
+    version_overrides = version(artifacts_org = artifacts, artifacts_repo={}),
+    project_name = "TypeDB Runner",
+    project_description = "TypeDB Runner classes and tools",
+    project_url = "https://github.com/vaticle/typedb-common",
+    scm_url = "https://github.com/vaticle/typedb-common",
+)
+
+deploy_maven(
+    name = "deploy-maven",
+    target = ":assemble-maven",
+    snapshot = deployment['maven.snapshot'],
+    release = deployment['maven.release']
 )
 
 checkstyle_test(
